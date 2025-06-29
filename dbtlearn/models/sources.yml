@@ -1,0 +1,109 @@
+version: 2
+
+sources:
+  - name: airbnb
+    schema: raw
+    tables:
+      - name: hosts
+        identifier: raw_hosts
+        columns:
+          - name: id
+            tests:
+              - unique
+              - not_null
+              - dbt_expectations.expect_column_values_to_be_of_type:
+                  column_type: number
+          - name: name
+            tests:
+              - null_hosts_percentage:
+                  percent: 5
+                  config:
+                    severity: warn
+          - name: is_superhost
+            tests:
+              - dbt_expectations.expect_column_distinct_count_to_equal:
+                  value: 2
+              - is_superhost_null_percentage:
+                  percent: 5
+                  config:
+                    severity: warn
+              - parseable_to_boolean
+    
+      - name: listings
+        identifier: raw_listings
+        columns:
+          - name: id
+            tests:
+              - unique
+              - not_null
+              - dbt_expectations.expect_column_values_to_be_of_type:
+                  column_type: number
+          - name: listing_url
+            tests:
+              - not_null
+              - dbt_expectations.expect_column_values_to_match_regex:
+                  regex: "^https:\\/\\/www\\.airbnb\\.com\\/rooms\\/[0-9]+$"
+          - name: name
+            tests:
+              - not_null
+          - name: room_type
+            tests:
+              - dbt_expectations.expect_column_distinct_count_to_equal:
+                  value: 4
+          - name: minimum_nights
+            tests:
+              - dbt_expectations.expect_column_values_to_be_of_type:
+                  column_type: number
+              - dbt_expectations.expect_column_min_to_be_between:
+                  min_value: 0
+                  strictly: false
+              - minimum_nights_positive_value_percentage:
+                  percent: 5
+                  config:
+                    severity: warn
+          - name: host_id
+            tests:
+              - not_null
+              - dbt_expectations.expect_column_values_to_be_of_type:
+                  column_type: number
+              - positive_value
+              - relationships:
+                  to: source('airbnb', 'hosts')
+                  field: id
+          - name: price
+            tests:
+              - dbt_expectations.expect_column_values_to_match_regex:
+                  regex: "^\\\\$[0-9][0-9\\\\.]+$"
+              - price_str_parseable_to_positive_number
+        
+
+      - name: reviews
+        identifier: raw_reviews
+        loaded_at_field: date
+        config:
+          freshness:
+            warn_after: {count: 1, period: hour}
+            error_after: {count: 24, period: hour}
+        columns:
+          - name: listing_id
+            tests:
+              - not_null
+              - dbt_expectations.expect_column_values_to_be_of_type:
+                  column_type: number
+              - relationships:
+                  to: source('airbnb', 'listings')
+                  field: id
+          - name: date
+            tests:
+              - not_null
+              - dbt_expectations.expect_column_values_to_be_of_type:
+                  column_type: timestamp_ntz
+          - name: reviewer_name
+            tests:
+              - not_null
+          - name: sentiment
+            tests:
+              - dbt_expectations.expect_column_distinct_count_to_equal:
+                  value: 3
+              - accepted_values:
+                  values: ['positive', 'neutral', 'negative']
