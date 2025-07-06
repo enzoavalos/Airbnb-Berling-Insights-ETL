@@ -41,6 +41,10 @@ models:
     dim:
       +materialized: table
 
+snapshots:
+  dbtlearn:
+    +schema: DEV
+
 tests:
   +store_failures: true
   +schema: monitoring

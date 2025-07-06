@@ -1,0 +1,26 @@
+version: 2
+
+snapshots:
+  - name: scd_raw_hosts
+    description: SCD type 2 dimension for Airbnb hosts
+    columns:
+      - name: id
+        tests:
+          - not_null
+          - assert_single_active_version
+      - name: dbt_scd_id
+        tests:
+          - not_null
+          - unique
+  
+  - name: scd_raw_listings
+    description: SCD type 2 dimension for Airbnb listings
+    columns:
+      - name: id
+        tests:
+          - not_null
+          - assert_single_active_version
+      - name: dbt_scd_id
+        tests:
+          - not_null
+          - unique

@@ -1,6 +1,7 @@
 WITH raw_listings AS (
     SELECT *
-    FROM {{ source('airbnb', 'listings') }}
+    FROM {{ ref('scd_raw_listings') }} l
+    WHERE l.DBT_VALID_TO IS NULL
 )
 SELECT
     id AS listing_id,
