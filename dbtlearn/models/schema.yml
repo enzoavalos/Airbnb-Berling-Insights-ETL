@@ -18,7 +18,7 @@ models:
         tests:
           - not_null
           - accepted_values: 
-              values: ['t', 'f']
+              values: [true, false]
 
   - name: dim_listings_cleansed
     description: Cleansed table which contains Airbnb listings.
@@ -49,6 +49,7 @@ models:
           - positive_value
 
   - name: dim_listings_with_hosts
+    description: Unified dimension combining Airbnb listings with their respective hosts
     tests:
       - dbt_expectations.expect_table_row_count_to_equal_other_table:
           compare_model: source('airbnb', 'listings')
@@ -67,6 +68,7 @@ models:
               column_type: number
 
   - name: fct_reviews
+    description: Incremental fact table containing listing reviews
     tests:
       - reviews_null_comment_and_sentiment_percentage:
           percent: 5
@@ -79,9 +81,90 @@ models:
           - not_null
 
   - name: mart_fullmoon_reviews
+    description: Reviews flagged as either 1 day after full moon or not
     columns:
       - name: is_full_moon
         tests:
           - not_null
           - accepted_values: 
-              values: ['not full moon', 'full moon']
+              values: [true, false]
+
+  - name: review_sentiment_by_month
+    description: Monthly sentiment distribution
+    columns:
+      - name: review_month
+        tests:
+          - not_null
+      - name: review_sentiment
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['negative', 'neutral', 'positive']
+      - name: reviews_count
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_of_type:
+              column_type: number
+          - positive_value
+
+  - name: price_sentiment_correlation
+    description: Price statistics by sentiment in reviews one day after full moon
+    columns:
+      - name: avg_price
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_of_type:
+              column_type: number
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+      - name: price_stddev
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_of_type:
+              column_type: float
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+      - name: median_price
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_of_type:
+              column_type: number
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+  
+  - name: new_listings_time_series
+    description: Monthly count of new listings
+    columns:
+      - name: listing_month
+        tests:
+          - not_null
+          - unique
+          - dbt_expectations.expect_column_values_to_be_of_type:
+              column_type: date
+          - listing_time_series_all_months
+      - name: new_listings
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_of_type:
+              column_type: number
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+
+  - name: dim_listings_with_hosts_distribution_analysis
+    description: Categorizes listings by price range, minimum nights required, and stay duration type to support cross-sectional analysis of pricing vs. rental policies
+    columns:
+      - name: minimum_nights_category
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_of_type:
+              column_type: varchar
+      - name: stay_duration_type
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_of_type:
+              column_type: varchar
+      - name: price_category
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_of_type:
+              column_type: varchar

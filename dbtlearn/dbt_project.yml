@@ -40,6 +40,8 @@ models:
       +materialized: ephemeral
     dim:
       +materialized: table
+    analysis:
+      +materialized: table
 
 snapshots:
   dbtlearn:

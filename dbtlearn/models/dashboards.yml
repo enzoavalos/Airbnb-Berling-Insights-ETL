@@ -1,15 +1,18 @@
 version: 2
 exposures:
   - name: executive_dashboard
-    label: Executive Dashboard
+    label: Airbnb Berlin Insights
     type: dashboard
-    maturity: low
+    maturity: high
     url: https://d6b79cf7.us2a.app.preset.io/superset/dashboard/8/
-    description: Executive Dashboard about Airbnb listings and hosts
+    description: Executive Dashboard providing Airbnb Berlin Insights
 
     depends_on:
-      - ref('dim_listings_with_hosts')
+      - ref('dim_listings_with_hosts_distribution_analysis')
       - ref('mart_fullmoon_reviews')
+      - ref('new_listings_time_series')
+      - ref('price_sentiment_correlation')
+      - ref('review_sentiment_by_month')
     
     owner:
       name: Enzo Avalos

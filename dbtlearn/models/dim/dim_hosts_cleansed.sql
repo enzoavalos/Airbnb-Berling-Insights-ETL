@@ -13,7 +13,10 @@ SELECT
         host_name,
         'Anonymous'
     ) AS host_name,
-    COALESCE(is_superhost, 'f') AS is_superhost,
+    CASE 
+        WHEN is_superhost = 't' THEN TRUE
+        ELSE FALSE
+    END AS is_superhost,
     created_at,
     updated_at
 FROM
