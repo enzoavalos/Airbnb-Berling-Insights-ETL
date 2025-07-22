@@ -42,6 +42,9 @@ models:
       +materialized: table
     analysis:
       +materialized: table
+    profiling:
+      +schema: data_profiling
+      +materialized: table
 
 snapshots:
   dbtlearn:
