@@ -40,11 +40,21 @@ models:
       +materialized: ephemeral
     dim:
       +materialized: table
+    fct:
+      +materialized: table
+    marts:
+      +materialized: table
     analysis:
       +materialized: table
     profiling:
       +schema: data_profiling
       +materialized: table
+  elementary:
+    +schema: elementary
+
+flags:
+  require_explicit_package_overrides_for_builti n_materializations: False
+  source_freshness_run_project_hooks: True
 
 snapshots:
   dbtlearn:

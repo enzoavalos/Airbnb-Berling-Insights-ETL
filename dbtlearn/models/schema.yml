@@ -3,6 +3,26 @@ version: 2
 models:
   - name: dim_hosts_cleansed
     description: Cleansed table for Airbnb hosts
+    config:
+      elementary:
+        timestamp_column: "created_at"
+    tests:
+      - elementary.schema_changes:
+          config:
+            severity: warn
+      - elementary.volume_anomalies:
+          anomaly_direction: both
+          time_bucket:
+            period: day
+            count: 1
+          ignore_small_changes:
+            spike_failure_percent_threshold: 10
+            drop_failure_percent_threshold: 5
+          detection_delay:
+            period: day
+            count: 1
+          config:
+            severity: warn
     columns:
       - name: host_id
         description: The id of the host. This is the primary key.
@@ -22,6 +42,13 @@ models:
 
   - name: dim_listings_cleansed
     description: Cleansed table which contains Airbnb listings.
+    config:
+      elementary:
+        timestamp_column: "created_at"
+    tests:
+      - elementary.schema_changes:
+          config:
+            severity: warn
     columns:
       - name: listing_id
         description: Primary key for the listing.
@@ -50,9 +77,55 @@ models:
 
   - name: dim_listings_with_hosts
     description: Unified dimension combining Airbnb listings with their respective hosts
+    config:
+      elementary:
+        timestamp_column: "created_at"
+    meta:
+      owner: "@enzo.avalos"
+      subscribers: "@data-team"
     tests:
+      - elementary.schema_changes:
+          config:
+            severity: warn
       - dbt_expectations.expect_table_row_count_to_equal_other_table:
           compare_model: source('airbnb', 'listings')
+      - elementary.volume_anomalies:
+          anomaly_direction: both
+          time_bucket:
+            period: day
+            count: 1
+          ignore_small_changes:
+            spike_failure_percent_threshold: 10
+            drop_failure_percent_threshold: 5
+          detection_delay:
+            period: day
+            count: 1
+          config:
+            severity: warn
+      - elementary.dimension_anomalies:
+          dimensions:
+            - room_type
+          anomaly_direction: both
+          time_bucket:
+            period: day
+            count: 1
+          ignore_small_changes:
+            spike_failure_percent_threshold: 5
+            drop_failure_percent_threshold: 5
+          config:
+            severity: warn
+      - elementary.dimension_anomalies:
+          dimensions:
+            - host_is_superhost
+          anomaly_direction: both
+          time_bucket:
+            period: day
+            count: 1
+          ignore_small_changes:
+            spike_failure_percent_threshold: 5
+            drop_failure_percent_threshold: 5
+          config:
+            severity: warn
     columns:
       - name: price
         tests:
@@ -69,9 +142,40 @@ models:
 
   - name: fct_reviews
     description: Incremental fact table containing listing reviews
+    config:
+      elementary:
+        timestamp_column: "review_date"
     tests:
+      - elementary.schema_changes:
+          config:
+            severity: warn
       - reviews_null_comment_and_sentiment_percentage:
           percent: 5
+          config:
+            severity: warn
+      - elementary.volume_anomalies:
+          anomaly_direction: both
+          time_bucket:
+            period: day
+            count: 1
+          ignore_small_changes:
+            spike_failure_percent_threshold: 10
+            drop_failure_percent_threshold: 5
+          detection_delay:
+            period: day
+            count: 1
+          config:
+            severity: warn
+      - elementary.dimension_anomalies:
+          dimensions:
+            - review_sentiment
+          anomaly_direction: both
+          time_bucket:
+            period: day
+            count: 1
+          ignore_small_changes:
+            spike_failure_percent_threshold: 3
+            drop_failure_percent_threshold: 3
           config:
             severity: warn
     columns:
@@ -82,6 +186,13 @@ models:
 
   - name: mart_fullmoon_reviews
     description: Reviews flagged as either 1 day after full moon or not
+    config:
+      elementary:
+        timestamp_column: "review_date"
+    tests:
+      - elementary.schema_changes:
+          config:
+            severity: error
     columns:
       - name: is_full_moon
         tests:
@@ -91,6 +202,10 @@ models:
 
   - name: review_sentiment_by_month
     description: Monthly sentiment distribution
+    tests:
+      - elementary.schema_changes:
+          config:
+            severity: error
     columns:
       - name: review_month
         tests:
@@ -109,6 +224,10 @@ models:
 
   - name: price_sentiment_correlation
     description: Price statistics by sentiment in reviews one day after full moon
+    tests:
+      - elementary.schema_changes:
+          config:
+            severity: error
     columns:
       - name: avg_price
         tests:
@@ -134,6 +253,10 @@ models:
   
   - name: new_listings_time_series
     description: Monthly count of new listings
+    tests:
+      - elementary.schema_changes:
+          config:
+            severity: error
     columns:
       - name: listing_month
         tests:
@@ -152,6 +275,13 @@ models:
 
   - name: dim_listings_with_hosts_distribution_analysis
     description: Categorizes listings by price range, minimum nights required, and stay duration type to support cross-sectional analysis of pricing vs. rental policies
+    config:
+      elementary:
+        timestamp_column: "created_at"
+    tests:
+      - elementary.schema_changes:
+          config:
+            severity: error
     columns:
       - name: minimum_nights_category
         tests:
@@ -163,8 +293,12 @@ models:
           - not_null
           - dbt_expectations.expect_column_values_to_be_of_type:
               column_type: varchar
+          - dbt_expectations.expect_column_distinct_count_to_equal:
+              value: 3
       - name: price_category
         tests:
           - not_null
           - dbt_expectations.expect_column_values_to_be_of_type:
               column_type: varchar
+          - dbt_expectations.expect_column_distinct_count_to_equal:
+              value: 3

@@ -6,20 +6,25 @@ sources:
     tables:
       - name: hosts
         identifier: raw_hosts
+        tests:
+          - elementary.schema_changes_from_baseline
         columns:
           - name: id
+            data_type: integer
             tests:
               - unique
               - not_null
               - dbt_expectations.expect_column_values_to_be_of_type:
                   column_type: number
           - name: name
+            data_type: text
             tests:
               - null_hosts_percentage:
                   percent: 5
                   config:
                     severity: warn
           - name: is_superhost
+            data_type: text
             tests:
               - dbt_expectations.expect_column_distinct_count_to_equal:
                   value: 2
@@ -28,29 +33,40 @@ sources:
                   config:
                     severity: warn
               - parseable_to_boolean
+          - name: created_at
+            data_type: timestamp_ntz
+          - name: updated_at
+            data_type: timestamp_ntz
     
       - name: listings
         identifier: raw_listings
+        tests:
+          - elementary.schema_changes_from_baseline
         columns:
           - name: id
+            data_type: integer
             tests:
               - unique
               - not_null
               - dbt_expectations.expect_column_values_to_be_of_type:
                   column_type: number
           - name: listing_url
+            data_type: text
             tests:
               - not_null
               - dbt_expectations.expect_column_values_to_match_regex:
                   regex: "^https:\\/\\/www\\.airbnb\\.com\\/rooms\\/[0-9]+$"
           - name: name
+            data_type: text
             tests:
               - not_null
           - name: room_type
+            data_type: text
             tests:
               - dbt_expectations.expect_column_distinct_count_to_equal:
                   value: 4
           - name: minimum_nights
+            data_type: integer
             tests:
               - dbt_expectations.expect_column_values_to_be_of_type:
                   column_type: number
@@ -62,6 +78,7 @@ sources:
                   config:
                     severity: warn
           - name: host_id
+            data_type: integer
             tests:
               - not_null
               - dbt_expectations.expect_column_values_to_be_of_type:
@@ -71,10 +88,15 @@ sources:
                   to: source('airbnb', 'hosts')
                   field: id
           - name: price
+            data_type: text
             tests:
               - dbt_expectations.expect_column_values_to_match_regex:
                   regex: "^\\\\$[0-9][0-9\\\\.]+$"
               - price_str_parseable_to_positive_number
+          - name: created_at
+            data_type: timestamp_ntz
+          - name: updated_at
+            data_type: timestamp_ntz
         
 
       - name: reviews
@@ -84,8 +106,11 @@ sources:
           freshness:
             warn_after: {count: 1, period: hour}
             error_after: {count: 24, period: hour}
+        tests:
+          - elementary.schema_changes_from_baseline
         columns:
           - name: listing_id
+            data_type: integer
             tests:
               - not_null
               - dbt_expectations.expect_column_values_to_be_of_type:
@@ -94,16 +119,21 @@ sources:
                   to: source('airbnb', 'listings')
                   field: id
           - name: date
+            data_type: timestamp_ntz
             tests:
               - not_null
               - dbt_expectations.expect_column_values_to_be_of_type:
                   column_type: timestamp_ntz
           - name: reviewer_name
+            data_type: text
             tests:
               - not_null
           - name: sentiment
+            data_type: text
             tests:
               - dbt_expectations.expect_column_distinct_count_to_equal:
                   value: 3
               - accepted_values:
                   values: ['positive', 'neutral', 'negative']
+          - name: comments
+            data_type: text
